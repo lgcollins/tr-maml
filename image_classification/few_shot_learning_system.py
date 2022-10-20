@@ -177,16 +177,10 @@ class MAMLFewShotClassifier(nn.Module):
     def get_across_task_loss_metrics(self, total_losses, total_accuracies):
         losses = dict()
 
-    #    print("TOTAL_ACCS")
-     #   print(total_accuracies)
-
         losses['loss'] = torch.mean(torch.stack(total_losses))
         losses['mx_loss'] = torch.max(torch.stack(total_losses))
         losses['std_loss'] = torch.std(torch.stack(total_losses))
         losses['accuracy'] = torch.mean(torch.stack(total_accuracies))
-#        losses['min_accuracy'] = np.min(total_accuracies)
-#        losses['std_accuracy'] = np.std(total_accuracies)
-#         losses['full_loosses'] = torch.stack(total_losses) # need to makes ure right datatype
 
         return losses
 
@@ -267,14 +261,6 @@ class MAMLFewShotClassifier(nn.Module):
 
             per_task_target_preds[task_id] = target_preds.detach().cpu().numpy()
             _, predicted = torch.max(target_preds.data, 1)
-
-            
-    #        print("PREDS")
-     #       print(target_preds.data)
-      #      print("PREDICTIONS")
-       #     print(predicted)
-        #    print("TRUE LABELS")
-         #   print(y_target_set_task.data.float())
 
             accuracy = predicted.float().eq(y_target_set_task.data.float()).cpu().float()
             task_losses = torch.sum(torch.stack(task_losses))
@@ -396,18 +382,12 @@ class MAMLFewShotClassifier(nn.Module):
 
         x_support_set, x_target_set, y_support_set, y_target_set, selected_task = data_batch
 
- #       print(selected_task[0])
-#        print(x_support_set[0][0,:,:,:,:])
-
         x_support_set = torch.Tensor(x_support_set).float().to(device=self.device)
         x_target_set = torch.Tensor(x_target_set).float().to(device=self.device)
         y_support_set = torch.Tensor(y_support_set).long().to(device=self.device)
         y_target_set = torch.Tensor(y_target_set).long().to(device=self.device)
-        
-#         p = torch.Tensor(p).long().to(device=self.device)
 
         data_batch = (x_support_set, x_target_set, y_support_set, y_target_set)
-        #print(x_support_set[0])
         losses, full_losses, full_accs, per_task_target_preds = self.train_forward_prop(data_batch=data_batch, epoch=epoch)
         
         loss_report = np.zeros(self.num_tasks)
@@ -417,11 +397,7 @@ class MAMLFewShotClassifier(nn.Module):
             loss_counts[idx] += 1
         for idx in range(self.num_tasks):
             if loss_counts[idx] > 1:
-                loss_report[idx] = loss_report[idx]/loss_counts[idx]
-
-    #    print("TASK_train")
-     #   print(selected_task)
-       # print(loss_report)        
+                loss_report[idx] = loss_report[idx]/loss_counts[idx]      
 
         losses['check_mx']=False
         if losses['mx_loss'] > self.max:
@@ -448,7 +424,7 @@ class MAMLFewShotClassifier(nn.Module):
         losses['learning_rate'] = self.scheduler.get_lr()[0]
 
         # update p
-        if self.TR_MAML==1:
+        if self.TR_MAML:
             tmp = np.zeros(self.num_tasks)
             for idxx, task_idx in enumerate(selected_task):
                 tmp[task_idx] += full_losses[idxx].detach().cpu().numpy()
@@ -477,8 +453,6 @@ class MAMLFewShotClassifier(nn.Module):
         y_support_set = torch.Tensor(y_support_set).long().to(device=self.device)
         y_target_set = torch.Tensor(y_target_set).long().to(device=self.device)
 
-        #print(self.p)
-
         data_batch = (x_support_set, x_target_set, y_support_set, y_target_set)
 
         losses, full_accs, per_task_target_preds = self.evaluation_forward_prop(data_batch=data_batch, epoch=self.current_epoch)
@@ -493,11 +467,6 @@ class MAMLFewShotClassifier(nn.Module):
             self.count = 0
         else:
             losses['mx_loss'] = self.old_val_max
-
-
-        # losses['loss'].backward() # uncomment if you get the weird memory error
-        # self.zero_grad()
-        # self.optimizer.zero_grad()
 
         return losses, full_accs, per_task_target_preds
 
